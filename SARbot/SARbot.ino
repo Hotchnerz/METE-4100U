@@ -63,12 +63,12 @@ void correctSpeed() {
     left_motor_speed = 0;
     right_motor_speed = 0;
   } else if (left_diagonal_ir_state == 0) {
-    left_motor_speed += 0.1;
+    left_motor_speed += 0.12;
   } else if (right_diagonal_ir_state == 0) {
-    right_motor_speed += 0.1;
+    right_motor_speed += 0.12;
   } else {
-    left_motor_speed = -50;
-    right_motor_speed = -50;
+    left_motor_speed = -100;
+    right_motor_speed = -100;
   }
 }
 
@@ -88,8 +88,8 @@ void turnLeft() {
     left_motor.setSpeed(-50);
     right_motor.setSpeed(50);
   }
-  left_motor.setSpeed(0);
-  right_motor.setSpeed(0);
+  //left_motor.setSpeed(0);
+  //right_motor.setSpeed(0);
 }
 
 // turn right 90 deg
@@ -108,8 +108,8 @@ void turnRight() {
     left_motor.setSpeed(50);
     right_motor.setSpeed(-50);
   }
-  left_motor.setSpeed(0);
-  right_motor.setSpeed(0);
+  //left_motor.setSpeed(0);
+  //right_motor.setSpeed(0);
 }
 
 // forward 1 cell step
@@ -132,8 +132,8 @@ void fwdStep() {
     left_motor.setSpeed(left_motor_speed);
     right_motor.setSpeed(right_motor_speed);
   }
-  left_motor.setSpeed(0);
-  right_motor.setSpeed(0);
+  //left_motor.setSpeed(0);
+  //right_motor.setSpeed(0);
 }
 
 
@@ -146,10 +146,7 @@ void wallFollow() {
   } else if (right_ir_state == 1) {
     turnRight();
     fwdStep(); 
-  } else {
-    left_motor.setSpeed(0);
-    right_motor.setSpeed(0);
-  }
+  } 
 }
 
 void setup() {
@@ -165,7 +162,9 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(right_ir), right_state_isr, CHANGE);
   attachInterrupt(digitalPinToInterrupt(left_diagonal_ir), left_diagonal_state_isr, CHANGE);
   attachInterrupt(digitalPinToInterrupt(right_diagonal_ir), right_diagonal_state_isr, CHANGE);
-  delay(1000);
+  left_motor.setSpeed(0);
+  right_motor.setSpeed(0);
+  delay(1500);
 }
 
 void loop() {
