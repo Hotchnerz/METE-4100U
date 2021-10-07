@@ -59,28 +59,36 @@ void right_diagonal_state_isr() {
 
 // correct speed function
 void correctSpeed() {
-  if (front_ir_state == 0) {
-    left_motor_speed = 0;
-    right_motor_speed = 0;
-  } else if (left_diagonal_ir_state == 0) {
-    left_motor_speed += 0.12;
-  } else if (right_diagonal_ir_state == 0) {
-    right_motor_speed += 0.12;
+  if ((right_diagonal_ir_state == 0) && (left_diagonal_ir_state == 1)){
+    right_motor_speed += 0.11;
+  } else if ((left_diagonal_ir_state == 0) && (right_diagonal_ir_state == 1)) {
+    left_motor_speed += 0.11;
   } else {
-    left_motor_speed = -100;
-    right_motor_speed = -100;
+    left_motor_speed = -50;
+    right_motor_speed = -50;
   }
 }
 
 // left turn 90 deg
 void turnLeft() {
-  float initial_left_enc = left_wheel_encoder.read();
   float initial_right_enc = right_wheel_encoder.read();
+  float initial_left_enc = left_wheel_encoder.read();
   float initial_left_rot = countRotations(initial_left_enc);
   float initial_right_rot = countRotations(initial_right_enc);
   float left_rot = 0;
   float right_rot = 0;
-  while ((left_rot <= 0.33) && (right_rot >= -0.33)) {
+  while ((left_rot <= 0.15) && (right_rot <= 0.15)) {
+    correctSpeed();
+    float left_enc = left_wheel_encoder.read();
+    float right_enc = right_wheel_encoder.read();
+    left_rot = countRotations(left_enc) - initial_left_rot;
+    right_rot = countRotations(right_enc) - initial_right_rot;
+    left_motor.setSpeed(left_motor_speed);
+    right_motor.setSpeed(right_motor_speed);
+  }
+  left_rot = 0;
+  right_rot = 0;
+  while ((left_rot <= 0.50) && (right_rot >= -0.50)) {
     float left_enc = left_wheel_encoder.read();
     float right_enc = right_wheel_encoder.read();
     left_rot = initial_left_rot - countRotations(left_enc);
@@ -92,6 +100,24 @@ void turnLeft() {
   //right_motor.setSpeed(0);
 }
 
+// uTurn 
+void uTurn() {
+  float initial_right_enc = right_wheel_encoder.read();
+  float initial_left_enc = left_wheel_encoder.read();
+  float initial_left_rot = countRotations(initial_left_enc);
+  float initial_right_rot = countRotations(initial_right_enc);
+  float left_rot = 0;
+  float right_rot = 0;
+  while ((left_rot <= 0.8) && (right_rot >= -0.8)) {
+    float left_enc = left_wheel_encoder.read();
+    float right_enc = right_wheel_encoder.read();
+    left_rot = initial_left_rot - countRotations(left_enc);
+    right_rot = initial_right_rot - countRotations(right_enc);
+    left_motor.setSpeed(-50);
+    right_motor.setSpeed(50);
+  }
+}
+
 // turn right 90 deg
 void turnRight() {
   float initial_left_enc = left_wheel_encoder.read();
@@ -100,13 +126,36 @@ void turnRight() {
   float initial_right_rot = countRotations(initial_right_enc);
   float left_rot = 0;
   float right_rot = 0;
-  while ((left_rot >= -0.33) && (right_rot <= 0.33)) {
+  while ((left_rot <= 0.15) && (right_rot <= 0.15)) {
+    correctSpeed();
+    float left_enc = left_wheel_encoder.read();
+    float right_enc = right_wheel_encoder.read();
+    left_rot = countRotations(left_enc) - initial_left_rot;
+    right_rot = countRotations(right_enc) - initial_right_rot;
+    left_motor.setSpeed(left_motor_speed);
+    right_motor.setSpeed(right_motor_speed);
+  }
+  left_rot = 0;
+  right_rot = 0;
+  while ((left_rot >= -0.50) && (right_rot <= 0.5
+  0)) {
     float left_enc = left_wheel_encoder.read();
     float right_enc = right_wheel_encoder.read();
     left_rot = initial_left_rot - countRotations(left_enc);
     right_rot = initial_right_rot - countRotations(right_enc);
     left_motor.setSpeed(50);
     right_motor.setSpeed(-50);
+  }
+  left_rot = 0;
+  right_rot = 0;
+  while ((left_rot <= 1.6) && (right_rot <= 1.6)) {
+    correctSpeed();
+    float left_enc = left_wheel_encoder.read();
+    float right_enc = right_wheel_encoder.read();
+    left_rot = countRotations(left_enc) - initial_left_rot;
+    right_rot = countRotations(right_enc) - initial_right_rot;
+    left_motor.setSpeed(left_motor_speed);
+    right_motor.setSpeed(right_motor_speed);
   }
   //left_motor.setSpeed(0);
   //right_motor.setSpeed(0);
@@ -121,10 +170,10 @@ void fwdStep() {
   float left_rot = 0;
   float right_rot = 0;
   while ((left_rot <= 0.93) && (right_rot <= 0.93)) {
-    if (front_ir_state == 0){
-      break; 
-    }
     correctSpeed();
+    if ((front_ir_state == 0) || (right_ir_state == 1)) {
+      break;
+    }
     float left_enc = left_wheel_encoder.read();
     float right_enc = right_wheel_encoder.read();
     left_rot = countRotations(left_enc) - initial_left_rot;
@@ -140,13 +189,14 @@ void fwdStep() {
 // follow wall
 void wallFollow() {
   if ((front_ir_state == 1) && (right_ir_state == 0)) {
-    fwdStep(); 
-  } else if ((front_ir_state == 0) && (right_ir_state == 0)) {
-    turnLeft();
+    fwdStep();
   } else if (right_ir_state == 1) {
     turnRight();
-    fwdStep(); 
-  } 
+  } else if ((front_ir_state == 0) && (right_ir_state == 0) && (left_ir_state == 0)) {
+    uTurn(); 
+  } else if ((front_ir_state == 0) && (right_ir_state == 0)) {
+    turnLeft();
+  }
 }
 
 void setup() {
@@ -173,6 +223,7 @@ void loop() {
   float left_rot = countRotations(left_enc);
   float right_rot = countRotations(right_enc);
   wallFollow();
+
   /*
     Serial.print("front ir: ");
     Serial.print(front_ir_state);
