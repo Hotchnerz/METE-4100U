@@ -59,7 +59,7 @@ void right_diagonal_state_isr() {
 
 // correct speed function
 void correctSpeed() {
-  if ((right_diagonal_ir_state == 0) && (left_diagonal_ir_state == 1)){
+  if ((right_diagonal_ir_state == 0) && (left_diagonal_ir_state == 1)) {
     right_motor_speed += 0.11;
   } else if ((left_diagonal_ir_state == 0) && (right_diagonal_ir_state == 1)) {
     left_motor_speed += 0.11;
@@ -100,7 +100,47 @@ void turnLeft() {
   //right_motor.setSpeed(0);
 }
 
-// uTurn 
+// leftTurnSpecial
+void leftTurnSpecial() {
+  float initial_right_enc = right_wheel_encoder.read();
+  float initial_left_enc = left_wheel_encoder.read();
+  float initial_left_rot = countRotations(initial_left_enc);
+  float initial_right_rot = countRotations(initial_right_enc);
+  float left_rot = 0;
+  float right_rot = 0;
+  /*while ((left_rot <= 0.3) && (right_rot <= 0.3)) {
+    correctSpeed();
+    float left_enc = left_wheel_encoder.read();
+    float right_enc = right_wheel_encoder.read();
+    left_rot = countRotations(left_enc) - initial_left_rot;
+    right_rot = countRotations(right_enc) - initial_right_rot;
+    left_motor.setSpeed(left_motor_speed);
+    right_motor.setSpeed(right_motor_speed);
+  }
+  left_rot = 0;
+  right_rot = 0;*/ 
+  while ((left_rot >= -0.50) && (right_rot <= 0.50)) {
+    float left_enc = left_wheel_encoder.read();
+    float right_enc = right_wheel_encoder.read();
+    left_rot = initial_left_rot - countRotations(left_enc);
+    right_rot = initial_right_rot - countRotations(right_enc);
+    left_motor.setSpeed(50);
+    right_motor.setSpeed(-50);
+  }
+  left_rot = 0;
+  right_rot = 0;
+
+  while ((left_rot >= -1.6) && (right_rot >= -1.6)) {
+    float left_enc = left_wheel_encoder.read();
+    float right_enc = right_wheel_encoder.read();
+    left_rot = countRotations(left_enc) - initial_left_rot;
+    right_rot = countRotations(right_enc) - initial_right_rot;
+    left_motor.setSpeed(40);
+    right_motor.setSpeed(40);
+  }
+}
+
+// uTurn
 void uTurn() {
   float initial_right_enc = right_wheel_encoder.read();
   float initial_left_enc = left_wheel_encoder.read();
@@ -126,7 +166,7 @@ void turnRight() {
   float initial_right_rot = countRotations(initial_right_enc);
   float left_rot = 0;
   float right_rot = 0;
-  while ((left_rot <= 0.15) && (right_rot <= 0.15)) {
+  while ((left_rot <= 0.20) && (right_rot <= 0.20)) {
     correctSpeed();
     float left_enc = left_wheel_encoder.read();
     float right_enc = right_wheel_encoder.read();
@@ -137,8 +177,7 @@ void turnRight() {
   }
   left_rot = 0;
   right_rot = 0;
-  while ((left_rot >= -0.50) && (right_rot <= 0.5
-  0)) {
+  while ((left_rot >= -0.50) && (right_rot <= 0.50)) {
     float left_enc = left_wheel_encoder.read();
     float right_enc = right_wheel_encoder.read();
     left_rot = initial_left_rot - countRotations(left_enc);
@@ -171,7 +210,7 @@ void fwdStep() {
   float right_rot = 0;
   while ((left_rot <= 0.93) && (right_rot <= 0.93)) {
     correctSpeed();
-    if ((front_ir_state == 0) || (right_ir_state == 1)) {
+    if (((front_ir_state == 1) && (left_ir_state == 1)) || (front_ir_state == 0) || (right_ir_state == 1)) {
       break;
     }
     float left_enc = left_wheel_encoder.read();
@@ -188,12 +227,19 @@ void fwdStep() {
 
 // follow wall
 void wallFollow() {
-  if ((front_ir_state == 1) && (right_ir_state == 0)) {
-    fwdStep();
+  if ((front_ir_state == 1) && (right_ir_state == 0) && (left_ir_state == 1)) {
+    left_motor.setSpeed(-50);
+    right_motor.setSpeed(-50);
+    delay(400); 
+    leftTurnSpecial();
+  } else if ((front_ir_state == 1) && (right_ir_state == 0)) {
+    correctSpeed();
+    left_motor.setSpeed(left_motor_speed);
+    right_motor.setSpeed(right_motor_speed);
   } else if (right_ir_state == 1) {
     turnRight();
   } else if ((front_ir_state == 0) && (right_ir_state == 0) && (left_ir_state == 0)) {
-    uTurn(); 
+    uTurn();
   } else if ((front_ir_state == 0) && (right_ir_state == 0)) {
     turnLeft();
   }
@@ -215,6 +261,7 @@ void setup() {
   left_motor.setSpeed(0);
   right_motor.setSpeed(0);
   delay(1500);
+
 }
 
 void loop() {
