@@ -46,10 +46,10 @@ const int y_ramp = 5;
 int start_point[2] = {x_start, y_start};
 
 // PID distance control variables
-double setpoint_dist = 6.5; // 6.5 cm
-double kp = 10;
-double ki = 5;
-double kd = 12.5;
+double setpoint_dist = 0; // 6.5 cm
+double kp = 5;
+double ki = 0;
+double kd = 0;
 // inputs
 double avg_left_dist; //average calculated ir distance
 double avg_right_dist;
@@ -59,9 +59,13 @@ double right_motor_pwm;
 const double motor_base_speed = 50; // base motor speed absolute pwm value
 double left_motor_speed;
 double right_motor_speed;
+
+double diff;
+double motor_pwm;
 // create PID object
-PID left_motor_PID(&avg_left_dist, &left_motor_pwm, &setpoint_dist, kp, ki, kd, DIRECT); // left motor pid instance
-PID right_motor_PID(&avg_right_dist, &right_motor_pwm, &setpoint_dist, kp, ki, kd, DIRECT); // right motor pid instance
+/*PID left_motor_PID(&avg_left_dist, &left_motor_pwm, &setpoint_dist, kp, ki, kd, DIRECT); // left motor pid instance
+PID right_motor_PID(&avg_right_dist, &right_motor_pwm, &setpoint_dist, kp, ki, kd, DIRECT); // right motor pid instance*/
+PID motor_PID(&diff, &motor_pwm, &setpoint_dist, kp, ki, kd, DIRECT); // Zero Distance Design
 
 
 // moving average of distance measurements LEFT
@@ -100,10 +104,14 @@ float countRotations(float encoder_position) {
 
 // move forward
 void moveFwd() {
-  left_motor_PID.Compute();
-  right_motor_PID.Compute();
-  left_motor_speed = constrain((motor_base_speed + left_motor_pwm), motor_base_speed, 100); // constrain var, min, max
-  right_motor_speed = constrain((motor_base_speed + right_motor_pwm), motor_base_speed, 100);
+  //left_motor_PID.Compute();
+  //right_motor_PID.Compute();
+  diff = avg_right_dist - avg_left_dist;
+  motor_PID.Compute();
+  /*left_motor_speed = constrain((motor_base_speed + (-1 * motor_pwm)), motor_base_speed, 100); // constrain var, min, max
+  right_motor_speed = constrain((motor_base_speed + motor_pwm), motor_base_speed, 100);*/
+  left_motor_speed = constrain((motor_base_speed + (-1 * motor_pwm)), motor_base_speed, 100); // constrain var, min, max
+  right_motor_speed = ((motor_base_speed + motor_pwm), motor_base_speed,100);
   left_motor.setSpeed(left_motor_speed);
   right_motor.setSpeed(right_motor_speed);
 }
@@ -280,10 +288,13 @@ void setup() {
   digitalWrite(right_IR_control, HIGH);
   digitalWrite(left_IR_control, HIGH);
   // init PID
-  left_motor_PID.SetMode(AUTOMATIC);
+  /*left_motor_PID.SetMode(AUTOMATIC);
   left_motor_PID.SetTunings(kp, ki, kd);
   right_motor_PID.SetMode(AUTOMATIC);
-  right_motor_PID.SetTunings(kp, ki, kd);
+  right_motor_PID.SetTunings(kp, ki, kd);*/
+  motor_PID.SetMode(AUTOMATIC);
+  motor_PID.SetTunings(kp, ki, kd);
+  motor_PID.SetOutputLimits(-255, 255);
 }
 
 void loop() {
@@ -297,9 +308,31 @@ void loop() {
   float left_rot = countRotations(left_enc); // convert the initial encoder value into rotation
   float right_rot = countRotations(right_enc); //180 mm is 0.93 rot
   wallFollow();
-  Serial.print(avg_left_dist);
+  /*Serial.print(avg_left_dist);
   Serial.print(",");
   Serial.print(setpoint_dist);
   Serial.print(",");
-  Serial.println(avg_right_dist);
+  Serial.println(avg_right_dist);*/motor_PID.Compute();
+  left_motor_speed = motor_base_speed + (-1 * motor_pwm); // constrain var, min, max
+  right_motor_speed = motor_base_speed + motor_pwm;
+  
+  //diff = avg_right_dist - avg_left_dist;
+  
+  /*motor_PID.Compute();
+  left_motor_speed = motor_base_speed + (-1 * motor_pwm); // constrain var, min, max
+  right_motor_speed = motor_base_speed + motor_pwm;
+  */
+  Serial.print("Left Sped: ");
+  Serial.print(left_motor_speed);
+  Serial.print(" | ");
+  Serial.print("Right Sped: ");
+  Serial.print(right_motor_speed);
+  Serial.print(" | "); 
+  Serial.print(avg_left_dist);
+  Serial.print(" | "); 
+  Serial.print(avg_right_dist);
+  Serial.print(" | ");
+  Serial.print(diff);
+  Serial.print(" | ");
+  Serial.println(motor_pwm);
 }
