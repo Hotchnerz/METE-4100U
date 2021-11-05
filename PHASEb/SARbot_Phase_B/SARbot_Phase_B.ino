@@ -4,7 +4,9 @@
 #include <CytronMotorDriver.h> // motor driver library 
 #include <Encoder.h> // encoder library 
 #include <PID_v1.h> // PID library 
+#include <Servo.h>
 
+Servo arm;
 // declare variables
 // all digital pins on the due are interrupt pins
 #define left_encoder_channel_A 9 // for best performance attach all the encoder channels to interrupt pins 
@@ -61,7 +63,7 @@ double avg_right_dist;
 // output is pwm speed control
 double left_motor_corr; // conrrection signal
 double right_motor_corr;
-const double motor_base_speed = 50; // base motor speed absolute pwm value
+const double motor_base_speed = 40; // base motor speed absolute pwm value
 double left_motor_speed; // final calculated speed
 double right_motor_speed;
 
@@ -161,6 +163,32 @@ void moveFwdABit() {
   right_motor.setSpeed(0);
 }
 
+// move forward
+void reverseABit() {
+  const float setpoint_rot = 0.12; // amount of wheel rotations
+  float initial_left_enc = left_wheel_encoder.read(); // read and store initial encoder value
+  float initial_right_enc = right_wheel_encoder.read();
+  float initial_left_rot = countRotations(initial_left_enc); // convert the initial encoder value into rotation
+  float initial_right_rot = countRotations(initial_right_enc);
+  float left_rot = 0; // initialize the rotation counter
+  float right_rot = 0;
+  // perform right turn
+  while ((right_rot <= setpoint_rot) or (left_rot <= setpoint_rot)) {
+    float left_enc = left_wheel_encoder.read(); // read wheel encoder values
+    float right_enc = right_wheel_encoder.read();
+    right_rot = initial_right_rot - countRotations(right_enc);
+    left_rot = initial_left_rot - countRotations(left_enc); // find the difference between the initial and current rotations
+    if (right_rot <= (setpoint_rot)) {
+      right_motor.setSpeed(-35);
+    }
+    if (left_rot <= (setpoint_rot)) {
+      left_motor.setSpeed(-35); // set turning speed (pwm)
+    }
+  }
+  left_motor.setSpeed(0); // set turning speed (pwm)
+  right_motor.setSpeed(0);
+}
+
 // 90 degree right turn function
 void turnRight() {
   const float setpoint_rot = 0.39; // amount of wheel rotations
@@ -215,7 +243,7 @@ void turnLeft() {
 
 //performs u-turn
 void uTurn() {
-  const float setpoint_rot = 0.90; // amount of wheel rotations
+  const float setpoint_rot = 0.79; // amount of wheel rotations
   float initial_left_enc = left_wheel_encoder.read(); // read and store initial encoder value
   float initial_right_enc = right_wheel_encoder.read();
   float initial_left_rot = countRotations(initial_left_enc); // convert the initial encoder value into rotation
@@ -277,8 +305,42 @@ void printMaze() {
   }
 }
 
+int lts_ct = 0;
+bool miner = false;
 void wallFollow() {
-  if ((front_ir_state == 1) && (avg_right_dist <= 13.0)) {
+  if ((front_ir_state == 1) && (bot_ir_state == 0) && (miner == false)) {
+    if (miner == false) {
+      left_motor.setSpeed(0);
+      right_motor.setSpeed(0);
+      delay(1000);
+      reverseABit();
+      reverseABit();
+      reverseABit();
+      reverseABit();
+      arm.write(0);
+      delay(1000);
+      moveFwdABit();
+      arm.write(180);
+      delay(1000);
+      if((bot_ir_state == 0)){
+        miner = true;
+      }   
+    }
+  } else if ((front_ir_state == 1) && (avg_right_dist <= 13.0) && (avg_left_dist > 13.0)) {
+    left_motor.setSpeed(0);
+    right_motor.setSpeed(0);
+    delay(1000);
+    reverseABit();
+    delay(1000);
+    moveFwdABit();
+    delay(1000);
+    turnLeft();
+    moveFwdABit();
+    for (int i = 0; i < arraylen; i++) {
+      left_distances[i] = 0;  // reset
+    }
+    delay(100);
+  } else if ((front_ir_state == 1) && (avg_right_dist <= 13.0)) {
     moveFwd();
   } else if (avg_right_dist > 13.0) {
     left_motor.setSpeed(0);
@@ -298,6 +360,29 @@ void wallFollow() {
   } else if ((front_ir_state == 0) && (avg_right_dist <= 13.0) && (avg_left_dist > 13.0)) {
     left_motor.setSpeed(0);
     right_motor.setSpeed(0);
+    delay(1000);
+    reverseABit();
+    delay(1000);
+    moveFwdABit();
+    delay(1000);
+    turnLeft();
+    moveFwdABit();
+    for (int i = 0; i < arraylen; i++) {
+      left_distances[i] = 0;  // reset
+    }
+    delay(100);
+  } else if ((front_ir_state == 0) && (avg_right_dist <= 13.0) && (avg_left_dist <= 13.0)) {
+    left_motor.setSpeed(0);
+    right_motor.setSpeed(0);
+    delay(500);
+    uTurn();
+    for (int i = 0; i < arraylen; i++) {
+      left_distances[i] = 0;  // reset
+    }
+    for (int i = 0; i < arraylen; i++) {
+      right_distances[i] = 0;  // sum the array
+    }
+    delay(100);
   } else {
     left_motor.setSpeed(0);
     right_motor.setSpeed(0);
@@ -308,7 +393,8 @@ void wallFollow() {
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-
+  arm.attach(13);
+  arm.write(180);
   // initialize ir pins and interrupt pins
   pinMode(front_ir, INPUT);
   pinMode(bot_ir, INPUT);
