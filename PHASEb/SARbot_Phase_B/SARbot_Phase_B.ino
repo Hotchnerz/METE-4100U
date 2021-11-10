@@ -23,24 +23,18 @@ CytronMD right_motor(PWM_DIR, 6, 7); // PWM 2 = Pin 5, DIR 2 = Pin 6.
 
 bool flag = true;
 // infrared sensor
-int front_ir = 25;
+int front_ir = 51;
 int front_ir_state = 1;
-int bot_ir = 23;
+int bot_ir = 8;
 int bot_ir_state = 1;
-int left_diagonal_ir = 27;
+int left_ir = 53;
+int left_ir_state = 1;
+int right_ir = 23;
+int right_ir_state = 1;
+int left_diagonal_ir = 25;
 int left_diagonal_ir_state = 1;
-int right_diagonal_ir = 29;
+int right_diagonal_ir = 49;
 int right_diagonal_ir_state = 1;
-
-int left_IR_control = 2; //high low active/stand-by control
-int left_IR_input = A0;
-int right_IR_control = 3; //high low active/stand-by control
-int right_IR_input = A1;
-float left_IR_data = 0;
-float left_distances[15]; // array to hold left distance measurements
-float right_IR_data = 0;
-float right_distances[15]; // array to hold right distance measurements
-byte arraylen = sizeof(left_distances) / sizeof(left_distances[0]); // length of array
 
 // Maze Mapping Variables
 const int rows = 6;
@@ -73,8 +67,9 @@ double right_motor_speed;
 /*PID left_motor_PID(&avg_left_dist, &left_motor_pwm, &setpoint_dist, kp, ki, kd, DIRECT); // left motor pid instance
   PID right_motor_PID(&avg_right_dist, &right_motor_pwm, &setpoint_dist, kp, ki, kd, DIRECT); // right motor pid instance*/
 
-// moving average of distance measurements LEFT
-float left_average(float data) { // raw sensor value
+/*
+  // moving average of distance measurements LEFT ***NOT USED
+  float left_average(float data) { // raw sensor value
   float calculated_distance = -0.0809 * (data) + 60.581; // calculate the distance of the object from the sensor
   float average_distances = 0;
   for (int i = 0; i < arraylen - 1; i++) {
@@ -89,10 +84,10 @@ float left_average(float data) { // raw sensor value
     average_distances == 0;
   }
   return average_distances; // return the average of the history of measurments
-}
-
-// moving average of distance measurements RIGHT
-float right_average(float data) { // raw sensor value
+  }
+  /
+  // moving average of distance measurements RIGHT ***NOT USED
+  float right_average(float data) { // raw sensor value
   float calculated_distance = -0.0809 * (data) + 60.581; // calculate the distance of the object from the sensor
   float average_distances = 0;
   for (int i = 0; i < arraylen - 1; i++) {
@@ -106,8 +101,9 @@ float right_average(float data) { // raw sensor value
   if (average_distances <= 0) {
     average_distances == 0;
   }
-  return average_distances;  // return the average of the history of measurments
-}
+  return average_distances;  // return the average of the history of measurements
+  }
+*/
 
 // function to count the wheel rotations
 float countRotations(float encoder_position) {
@@ -117,16 +113,16 @@ float countRotations(float encoder_position) {
 
 // correct speed function
 void correctSpeed() {
-  if ((right_diagonal_ir_state == 0) && (avg_right_dist <= avg_left_dist)) {
-    right_motor_corr += 1.0;
-  } else if ((left_diagonal_ir_state == 0) && (avg_left_dist <= avg_right_dist)) {
-    left_motor_corr += 1.0;
+  if (right_diagonal_ir_state == 0) {
+    right_motor_corr += 0.16;
+  } else if (left_diagonal_ir_state == 0) {
+    left_motor_corr += 0.16;
   } else {
     left_motor_corr = 0;
     right_motor_corr = 0;
   }
-  left_motor_speed = constrain((motor_base_speed + left_motor_corr + 3), motor_base_speed, 90);
-  right_motor_speed = constrain((motor_base_speed + right_motor_corr), motor_base_speed, 90);;
+  left_motor_speed = motor_base_speed + left_motor_corr + 1;//constrain((motor_base_speed + left_motor_corr + 3), motor_base_speed, 90);
+  right_motor_speed = motor_base_speed + right_motor_corr;//constrain((motor_base_speed + right_motor_corr), motor_base_speed, 90);;
 }
 
 // move forward
@@ -138,7 +134,7 @@ void moveFwd() {
 
 // move forward
 void moveFwdABit() {
-  const float setpoint_rot = 0.46; // amount of wheel rotations
+  const float setpoint_rot = 0.25; // amount of wheel rotations
   float initial_left_enc = left_wheel_encoder.read(); // read and store initial encoder value
   float initial_right_enc = right_wheel_encoder.read();
   float initial_left_rot = countRotations(initial_left_enc); // convert the initial encoder value into rotation
@@ -151,13 +147,31 @@ void moveFwdABit() {
     float right_enc = right_wheel_encoder.read();
     right_rot = initial_right_rot - countRotations(right_enc);
     left_rot = initial_left_rot - countRotations(left_enc); // find the difference between the initial and current rotations
-    correctSpeed();
-    if (right_rot >= (-1 * setpoint_rot)) {
-      right_motor.setSpeed(constrain(right_motor_speed, motor_base_speed, motor_base_speed + 9));
-    }
-    if (left_rot >= (-1 * setpoint_rot)) {
-      left_motor.setSpeed(constrain(left_motor_speed, motor_base_speed, motor_base_speed + 9)); // set turning speed (pwm)
-    }
+    //correctSpeed();
+    right_motor.setSpeed(motor_base_speed);
+    left_motor.setSpeed(motor_base_speed); // set turning speed (pwm)
+  }
+  left_motor.setSpeed(0); // set turning speed (pwm)
+  right_motor.setSpeed(0);
+}
+
+void moveFwdMiner() {
+  const float setpoint_rot = 0.60; // amount of wheel rotations
+  float initial_left_enc = left_wheel_encoder.read(); // read and store initial encoder value
+  float initial_right_enc = right_wheel_encoder.read();
+  float initial_left_rot = countRotations(initial_left_enc); // convert the initial encoder value into rotation
+  float initial_right_rot = countRotations(initial_right_enc);
+  float left_rot = 0; // initialize the rotation counter
+  float right_rot = 0;
+  // perform right turn
+  while ((right_rot >= (-1 * setpoint_rot)) or (left_rot >= (-1 * setpoint_rot))) {
+    float left_enc = left_wheel_encoder.read(); // read wheel encoder values
+    float right_enc = right_wheel_encoder.read();
+    right_rot = initial_right_rot - countRotations(right_enc);
+    left_rot = initial_left_rot - countRotations(left_enc); // find the difference between the initial and current rotations
+    //correctSpeed();
+    right_motor.setSpeed(motor_base_speed);
+    left_motor.setSpeed(motor_base_speed); // set turning speed (pwm)
   }
   left_motor.setSpeed(0); // set turning speed (pwm)
   right_motor.setSpeed(0);
@@ -178,12 +192,8 @@ void reverseABit() {
     float right_enc = right_wheel_encoder.read();
     right_rot = initial_right_rot - countRotations(right_enc);
     left_rot = initial_left_rot - countRotations(left_enc); // find the difference between the initial and current rotations
-    if (right_rot <= (setpoint_rot)) {
-      right_motor.setSpeed(-35);
-    }
-    if (left_rot <= (setpoint_rot)) {
-      left_motor.setSpeed(-35); // set turning speed (pwm)
-    }
+    right_motor.setSpeed(-35);
+    left_motor.setSpeed(-35); // set turning speed (pwm)
   }
   left_motor.setSpeed(0); // set turning speed (pwm)
   right_motor.setSpeed(0);
@@ -191,7 +201,7 @@ void reverseABit() {
 
 // 90 degree right turn function
 void turnRight() {
-  const float setpoint_rot = 0.39; // amount of wheel rotations
+  const float setpoint_rot = 0.300; // amount of wheel rotations
   float initial_left_enc = left_wheel_encoder.read(); // read and store initial encoder value
   float initial_right_enc = right_wheel_encoder.read();
   float initial_left_rot = countRotations(initial_left_enc); // convert the initial encoder value into rotation
@@ -204,12 +214,8 @@ void turnRight() {
     float right_enc = right_wheel_encoder.read();
     right_rot = initial_right_rot - countRotations(right_enc);
     left_rot = initial_left_rot - countRotations(left_enc); // find the difference between the initial and current rotations
-    if (right_rot <= setpoint_rot) {
-      right_motor.setSpeed(-35);
-    }
-    if (left_rot >= (-1 * setpoint_rot)) {
-      left_motor.setSpeed(35); // set turning speed (pwm)
-    }
+    right_motor.setSpeed(-35);
+    left_motor.setSpeed(35); // set turning speed (pwm)
   }
   left_motor.setSpeed(0); // set turning speed (pwm)
   right_motor.setSpeed(0);
@@ -217,7 +223,7 @@ void turnRight() {
 
 // left turn function
 void turnLeft() {
-  const float setpoint_rot = 0.39; // amount of wheel rotations
+  const float setpoint_rot = 0.30; // amount of wheel rotations
   float initial_left_enc = left_wheel_encoder.read(); // read and store initial encoder value
   float initial_right_enc = right_wheel_encoder.read();
   float initial_left_rot = countRotations(initial_left_enc); // convert the initial encoder value into rotation
@@ -230,12 +236,8 @@ void turnLeft() {
     float right_enc = right_wheel_encoder.read();
     right_rot = initial_right_rot - countRotations(right_enc);
     left_rot = initial_left_rot - countRotations(left_enc); // find the difference between the initial and current rotations
-    if (left_rot <= setpoint_rot) {
-      left_motor.setSpeed(-35);
-    }
-    if (right_rot >= (-1 * setpoint_rot)) {
-      right_motor.setSpeed(35); // set turning speed (pwm)
-    }
+    left_motor.setSpeed(-35);
+    right_motor.setSpeed(35); // set turning speed (pwm)
   }
   left_motor.setSpeed(0); // set turning speed (pwm)
   right_motor.setSpeed(0);
@@ -243,7 +245,7 @@ void turnLeft() {
 
 //performs u-turn
 void uTurn() {
-  const float setpoint_rot = 0.79; // amount of wheel rotations
+  const float setpoint_rot = 0.90; // amount of wheel rotations
   float initial_left_enc = left_wheel_encoder.read(); // read and store initial encoder value
   float initial_right_enc = right_wheel_encoder.read();
   float initial_left_rot = countRotations(initial_left_enc); // convert the initial encoder value into rotation
@@ -260,7 +262,6 @@ void uTurn() {
       right_motor.setSpeed(-40);
     } else
       right_motor.setSpeed(0);
-
     if (left_rot >= -1 * setpoint_rot) {
       left_motor.setSpeed(40); // set turning speed (pwm)
     } else
@@ -289,6 +290,12 @@ void left_diagonal_state_isr() {
 void right_diagonal_state_isr() {
   right_diagonal_ir_state = digitalRead(right_diagonal_ir);
 }
+void left_state_isr() {
+  left_ir_state = digitalRead(left_ir);
+}
+void right_state_isr() {
+  right_ir_state = digitalRead(right_ir);
+}
 
 void printMaze() {
   for (int i = 0; i < rows; i++) {
@@ -305,10 +312,10 @@ void printMaze() {
   }
 }
 
-int lts_ct = 0;
 bool miner = false;
 void wallFollow() {
   if ((front_ir_state == 1) && (bot_ir_state == 0) && (miner == false)) {
+    // see miner
     if (miner == false) {
       left_motor.setSpeed(0);
       right_motor.setSpeed(0);
@@ -319,74 +326,43 @@ void wallFollow() {
       reverseABit();
       arm.write(0);
       delay(1000);
-      moveFwdABit();
+      moveFwdMiner(); 
       arm.write(180);
       delay(1000);
-      if((bot_ir_state == 0)){
+      if ((bot_ir_state == 0)) {
         miner = true;
-      }   
+      }else if (bot_ir_state == 1){
+        reverseABit();
+      }
     }
-  } else if ((front_ir_state == 1) && (avg_right_dist <= 13.0) && (avg_left_dist > 13.0)) {
+  } /*else if ((front_ir_state == 1) && (right_ir_state == 0) && (left_ir_state == 1)) {
+    //left_turn_special
     left_motor.setSpeed(0);
     right_motor.setSpeed(0);
-    delay(1000);
-    reverseABit();
-    delay(1000);
-    moveFwdABit();
-    delay(1000);
-    turnLeft();
-    moveFwdABit();
-    for (int i = 0; i < arraylen; i++) {
-      left_distances[i] = 0;  // reset
-    }
-    delay(100);
-  } else if ((front_ir_state == 1) && (avg_right_dist <= 13.0)) {
+  } */else if ((front_ir_state == 1) && (right_ir_state == 0)) {
+    // forward moving
     moveFwd();
-  } else if (avg_right_dist > 13.0) {
-    left_motor.setSpeed(0);
-    right_motor.setSpeed(0);
-    delay(1000);
+  } else if (right_ir_state == 1) {
+    // turn right
     moveFwdABit();
-    delay(1000);
     turnRight();
-    delay(1000);
     moveFwdABit();
-    left_motor.setSpeed(0);
-    right_motor.setSpeed(0);
-    for (int i = 0; i < arraylen; i++) {
-      right_distances[i] = 0;  // sum the array
-    }
-    delay(100);
-  } else if ((front_ir_state == 0) && (avg_right_dist <= 13.0) && (avg_left_dist > 13.0)) {
-    left_motor.setSpeed(0);
-    right_motor.setSpeed(0);
-    delay(1000);
-    reverseABit();
-    delay(1000);
     moveFwdABit();
-    delay(1000);
+    moveFwdABit();
+
+  } else if ((front_ir_state == 0) && (right_ir_state == 0) && (left_ir_state == 1)) {
+    // turn left
+    moveFwdABit();
     turnLeft();
     moveFwdABit();
-    for (int i = 0; i < arraylen; i++) {
-      left_distances[i] = 0;  // reset
-    }
-    delay(100);
-  } else if ((front_ir_state == 0) && (avg_right_dist <= 13.0) && (avg_left_dist <= 13.0)) {
-    left_motor.setSpeed(0);
-    right_motor.setSpeed(0);
-    delay(500);
+    moveFwdABit();
+    moveFwdABit();
+  } else if ((front_ir_state == 0) && (right_ir_state == 0) && (left_ir_state == 0)) {
+    // uTurn
+    moveFwdABit();
+    moveFwdABit();
     uTurn();
-    for (int i = 0; i < arraylen; i++) {
-      left_distances[i] = 0;  // reset
-    }
-    for (int i = 0; i < arraylen; i++) {
-      right_distances[i] = 0;  // sum the array
-    }
-    delay(100);
-  } else {
-    left_motor.setSpeed(0);
-    right_motor.setSpeed(0);
-  }
+  } 
 }
 
 
@@ -400,20 +376,17 @@ void setup() {
   pinMode(bot_ir, INPUT);
   pinMode(left_diagonal_ir, INPUT);
   pinMode(right_diagonal_ir, INPUT);
+  pinMode(left_ir, INPUT);
+  pinMode(right_ir, INPUT);
   attachInterrupt(digitalPinToInterrupt(front_ir), front_state_isr, CHANGE); // initialize interrupt pin
   attachInterrupt(digitalPinToInterrupt(bot_ir), bot_state_isr, CHANGE); // initialize interrupt pin
   attachInterrupt(digitalPinToInterrupt(left_diagonal_ir), left_diagonal_state_isr, CHANGE);
   attachInterrupt(digitalPinToInterrupt(right_diagonal_ir), right_diagonal_state_isr, CHANGE);
-
-  pinMode(left_IR_control, OUTPUT);
-  digitalWrite(left_IR_control, HIGH); // set state to active
+  attachInterrupt(digitalPinToInterrupt(left_ir), left_state_isr, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(right_ir), right_state_isr, CHANGE);
   left_motor.setSpeed(0);
   right_motor.setSpeed(0);
-  pinMode(left_IR_control, OUTPUT);
-  pinMode(right_IR_control, OUTPUT);
-  digitalWrite(right_IR_control, HIGH);
-  digitalWrite(left_IR_control, HIGH);
-  delay(5000);
+  delay(10000);
   // init PID
   /*left_motor_PID.SetMode(AUTOMATIC);
     left_motor_PID.SetTunings(kp, ki, kd);
@@ -425,27 +398,25 @@ void setup() {
 }
 
 void loop() {
-  int left_IR_data = analogRead(left_IR_input);
-  avg_left_dist = left_average(left_IR_data);
-  int right_IR_data = analogRead(right_IR_input);
-  avg_right_dist = right_average(right_IR_data);
   // put your main code here, to run repeatedly:
   float left_enc = left_wheel_encoder.read();
   float right_enc = right_wheel_encoder.read();
   float left_rot = countRotations(left_enc); // convert the initial encoder value into rotation
   float right_rot = countRotations(right_enc); //180 mm is 0.93 rot
   wallFollow();
-  Serial.print("Left Sped: ");
+  //correctSpeed();
   Serial.print(left_motor_speed);
   Serial.print(" | ");
-  Serial.print("Right Sped: ");
   Serial.print(right_motor_speed);
   Serial.print(" | ");
-  Serial.print(avg_left_dist);
+  Serial.print(front_ir_state);
   Serial.print(" | ");
-  Serial.print(avg_right_dist);
+  Serial.print(left_ir_state);
+  Serial.print(" | ");
+  Serial.print(right_ir_state);
   Serial.print(" | ");
   Serial.print(left_diagonal_ir_state);
   Serial.print(" | ");
   Serial.println(right_diagonal_ir_state);
+
 }
