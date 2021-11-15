@@ -1,5 +1,5 @@
 /*
-   SARbot Phase B - Group 6 Code
+   SARbot Phase B-C - Group 6 Code
 */
 #include <CytronMotorDriver.h> // motor driver library 
 #include <Encoder.h> // encoder library 
