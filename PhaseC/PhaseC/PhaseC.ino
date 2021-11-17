@@ -60,3 +60,5 @@ double right_motor_corr;
 const double motor_base_speed = 60; // base motor speed absolute pwm value
 double left_motor_speed; // final calculated speed
 double right_motor_speed;
+
+bool miner = false;
