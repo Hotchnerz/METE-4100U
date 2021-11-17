@@ -18,7 +18,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(right_ir), right_state_isr, CHANGE);
   left_motor.setSpeed(0);
   right_motor.setSpeed(0);
-  //delay(10000);
+  delay(3000);
   // init PID
   /*left_motor_PID.SetMode(AUTOMATIC);
     left_motor_PID.SetTunings(kp, ki, kd);
@@ -30,11 +30,8 @@ void setup() {
 }
 
 void loop() {
-  //moveFwd();
-  turnRight();
-  delay(2500);
-  turnLeft();
-  delay(2500);
+ wallFollow();
+ 
   Serial.print(left_motor_speed);
   Serial.print(" | ");
   Serial.print(right_motor_speed);
