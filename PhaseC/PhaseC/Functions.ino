@@ -86,10 +86,10 @@ void turnLeft() {
   right_motor.setSpeed(0);
 }
 
-/*void wallFollow() {
+void wallFollow() {
   if ((front_ir_state == 1) && (bot_ir_state == 0) && (miner == false)) {
     // see miner
-    if (miner == false) {
+    /*if (miner == false) {
       left_motor.setSpeed(0);
       right_motor.setSpeed(0);
       delay(1000);
@@ -99,7 +99,7 @@ void turnLeft() {
       reverseABit();
       arm.write(0);
       delay(1000);
-      moveFwdMiner(); 
+      moveFwdMiner();
       arm.write(180);
       delay(1000);
       if ((bot_ir_state == 0)) {
@@ -107,27 +107,27 @@ void turnLeft() {
       }else if (bot_ir_state == 1){
         reverseABit();
       }
-    }
+    }*/
   } /*else if ((front_ir_state == 1) && (right_ir_state == 0) && (left_ir_state == 1)) {
     //left_turn_special
     left_motor.setSpeed(0);
     right_motor.setSpeed(0);
-  } *//*else if ((front_ir_state == 1) && (right_ir_state == 0)) {
+  } */ if ((front_ir_state == 1) && (right_ir_state == 0)) {
     // forward moving
     moveFwd();
   } else if (right_ir_state == 1) {
     // turn right
-    moveFwdABit();
+    //moveFwdABit();
     turnRight();
-    moveFwdABit();
-    moveFwdABit();
-    moveFwdABit();
+    //moveFwdABit();
+    //moveFwdABit();
+    //moveFwdABit();
 
-  } else if ((front_ir_state == 0) && (right_ir_state == 0) && (left_ir_state == 1)) {
+  }/* else if ((front_ir_state == 0) && (right_ir_state == 0) && (left_ir_state == 1)) {
     // turn left
-    moveFwdABit();
+    //moveFwdABit();
     turnLeft();
-    moveFwdABit();
+    /moveFwdABit();
     moveFwdABit();
     moveFwdABit();
   } else if ((front_ir_state == 0) && (right_ir_state == 0) && (left_ir_state == 0)) {
@@ -135,5 +135,5 @@ void turnLeft() {
     moveFwdABit();
     moveFwdABit();
     uTurn();
-  } 
-}*/
+  }*/
+  }
