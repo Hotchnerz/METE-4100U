@@ -34,7 +34,7 @@ void correctSpeed() {
 void moveFwd() {
   correctSpeed();
   left_motor.setSpeed(left_motor_speed);
-  right_motor.setSpeed(-right_motor_speed);
+  right_motor.setSpeed(right_motor_speed);
 }
 
 float countRotations(float encoder_position) {
@@ -44,7 +44,7 @@ float countRotations(float encoder_position) {
 
 // 90 degree right turn function
 void turnRight() {
-  const float setpoint_rot = 0.300; // amount of wheel rotations
+  const float setpoint_rot = 0.390; // amount of wheel rotations
   float initial_left_enc = left_wheel_encoder.read(); // read and store initial encoder value
   float initial_right_enc = right_wheel_encoder.read();
   float initial_left_rot = countRotations(initial_left_enc); // convert the initial encoder value into rotation
@@ -57,8 +57,30 @@ void turnRight() {
     float right_enc = right_wheel_encoder.read();
     right_rot = initial_right_rot - countRotations(right_enc);
     left_rot = initial_left_rot - countRotations(left_enc); // find the difference between the initial and current rotations
-    right_motor.setSpeed(-35);
-    left_motor.setSpeed(35); // set turning speed (pwm)
+    right_motor.setSpeed(-50);
+    left_motor.setSpeed(50); // set turning speed (pwm)
+  }
+  left_motor.setSpeed(0); // set turning speed (pwm)
+  right_motor.setSpeed(0);
+}
+
+// left turn function
+void turnLeft() {
+  const float setpoint_rot = 0.30; // amount of wheel rotations
+  float initial_left_enc = left_wheel_encoder.read(); // read and store initial encoder value
+  float initial_right_enc = right_wheel_encoder.read();
+  float initial_left_rot = countRotations(initial_left_enc); // convert the initial encoder value into rotation
+  float initial_right_rot = countRotations(initial_right_enc);
+  float left_rot = 0; // initialize the rotation counter
+  float right_rot = 0;
+  // perform left turn
+  while ((left_rot <= setpoint_rot) or (right_rot >= (-1 * setpoint_rot))) {
+    float left_enc = left_wheel_encoder.read(); // read wheel encoder values
+    float right_enc = right_wheel_encoder.read();
+    right_rot = initial_right_rot - countRotations(right_enc);
+    left_rot = initial_left_rot - countRotations(left_enc); // find the difference between the initial and current rotations
+    left_motor.setSpeed(-35);
+    right_motor.setSpeed(35); // set turning speed (pwm)
   }
   left_motor.setSpeed(0); // set turning speed (pwm)
   right_motor.setSpeed(0);

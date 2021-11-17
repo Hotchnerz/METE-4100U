@@ -30,7 +30,8 @@ void setup() {
 }
 
 void loop() {
-  moveFwd();
+  //moveFwd();
+  turnRight();
   Serial.print(left_motor_speed);
   Serial.print(" | ");
   Serial.print(right_motor_speed);
@@ -44,6 +45,7 @@ void loop() {
   Serial.print(left_diagonal_ir_state);
   Serial.print(" | ");
   Serial.println(right_diagonal_ir_state);
+  
   
 
 }
