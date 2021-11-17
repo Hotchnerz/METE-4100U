@@ -66,7 +66,7 @@ void turnRight() {
 
 // left turn function
 void turnLeft() {
-  const float setpoint_rot = 0.30; // amount of wheel rotations
+  const float setpoint_rot = 0.390; // amount of wheel rotations
   float initial_left_enc = left_wheel_encoder.read(); // read and store initial encoder value
   float initial_right_enc = right_wheel_encoder.read();
   float initial_left_rot = countRotations(initial_left_enc); // convert the initial encoder value into rotation
@@ -79,8 +79,8 @@ void turnLeft() {
     float right_enc = right_wheel_encoder.read();
     right_rot = initial_right_rot - countRotations(right_enc);
     left_rot = initial_left_rot - countRotations(left_enc); // find the difference between the initial and current rotations
-    left_motor.setSpeed(-35);
-    right_motor.setSpeed(35); // set turning speed (pwm)
+    left_motor.setSpeed(-50);
+    right_motor.setSpeed(50); // set turning speed (pwm)
   }
   left_motor.setSpeed(0); // set turning speed (pwm)
   right_motor.setSpeed(0);
