@@ -37,7 +37,7 @@ void correctSpeed() {
   if (right_diagonal_ir_state == 0) {
     right_motor_corr += 0.5;
   } else if (left_diagonal_ir_state == 0) {
-    left_motor_corr += 1.4;
+    left_motor_corr += 1.5;
   }
   else {
     left_motor_corr = 0;
@@ -45,7 +45,7 @@ void correctSpeed() {
   }
   left_motor_speed = motor_base_speed + left_motor_corr + 1;//constrain((motor_base_speed + left_motor_corr + 3), motor_base_speed, 90);
   right_motor_speed = motor_base_speed + right_motor_corr;//constrain((motor_base_speed + right_motor_corr), motor_base_speed, 90);;
-  return;
+
 }
 
 void moveFwd() {
@@ -55,12 +55,11 @@ void moveFwd() {
   correctSpeed();
   left_motor.setSpeed(left_motor_speed);
   right_motor.setSpeed(right_motor_speed);
-  
+
 }
 
-void moveFwdABit(int IRState) {
-  delay(1000);
-  const float setpoint_rot = 0.5; // amount of wheel rotations
+void moveFwdABit(int setpoint_rot) {
+  delay(300);
   float initial_left_enc = left_wheel_encoder.read(); // read and store initial encoder value
   float initial_right_enc = right_wheel_encoder.read();
   float initial_left_rot = countRotations(initial_left_enc); // convert the initial encoder value into rotation
@@ -68,7 +67,7 @@ void moveFwdABit(int IRState) {
   float left_rot = 0; // initialize the rotation counter
   float right_rot = 0;
 
-  while ((right_rot <= setpoint_rot) or (left_rot >= (-1 * setpoint_rot))) {
+  while ((right_rot >= (-1 * setpoint_rot)) or (left_rot >= (-1 * setpoint_rot))) {
     digitalWrite(rightLED, HIGH);
     digitalWrite(leftLED, HIGH);
     float left_enc = left_wheel_encoder.read(); // read wheel encoder values
@@ -77,6 +76,10 @@ void moveFwdABit(int IRState) {
     left_rot = initial_left_rot - countRotations(left_enc); // find the difference between the initial and current rotations
     right_motor.setSpeed(50);
     left_motor.setSpeed(50); // set turning speed (pwm)
+    Serial.print(right_rot);
+    Serial.print(" | ");
+    Serial.println(left_rot);
+
   }
   right_motor.setSpeed(0);
   left_motor.setSpeed(0);
@@ -89,6 +92,7 @@ float countRotations(float encoder_position) {
 
 // 90 degree right turn function
 void turnRight() {
+  moveFwdABit(0.45);
   right_motor.setSpeed(0);
   left_motor.setSpeed(0);
   lightsOff();
@@ -116,11 +120,14 @@ void turnRight() {
   right_motor.setSpeed(0);
   delay(250);
   lightsOff();
-  moveFwdABit(right_ir_state);
+  moveFwdABit(0.69);
 }
 
 // left turn function
 void turnLeft() {
+  moveFwdABit(0.45);
+  right_motor.setSpeed(0);
+  left_motor.setSpeed(0);
   lightsOff();
   ledBlink(3, leftLED);
   const float setpoint_rot = 0.390; // amount of wheel rotations
@@ -140,9 +147,11 @@ void turnLeft() {
     left_motor.setSpeed(-50);
     right_motor.setSpeed(50); // set turning speed (pwm)
   }
-  lightsOff();
   left_motor.setSpeed(0); // set turning speed (pwm)
   right_motor.setSpeed(0);
+  delay(250);
+  lightsOff();
+  moveFwdABit(0.5);
 }
 
 void wallFollow() {
@@ -177,19 +186,16 @@ void wallFollow() {
   } else if (right_ir_state == 1) {
     // turn right
     turnRight();
-}
+  }
 
-/*else if ((front_ir_state == 0) && (right_ir_state == 0) && (left_ir_state == 1)) {
-    // turn left
-    //moveFwdABit();
-    turnLeft();
-    /moveFwdABit();
-    moveFwdABit();
-    moveFwdABit();
-  } else if ((front_ir_state == 0) && (right_ir_state == 0) && (left_ir_state == 0)) {
-    // uTurn
-    moveFwdABit();
-    moveFwdABit();
-    uTurn();
-  }*/
+  else if ((front_ir_state == 0) && (right_ir_state == 0) && (left_ir_state == 1)) {
+      // turn left
+      turnLeft();
+  }
+    /*} else if ((front_ir_state == 0) && (right_ir_state == 0) && (left_ir_state == 0)) {
+      // uTurn
+      moveFwdABit();
+      moveFwdABit();
+      uTurn();
+    }*/
 }
